@@ -20,7 +20,7 @@
 #define MIN_RESCALE -0.5
 #define MAX_RESCALE 0.5
 
-#define DEBUG
+//#define DEBUG
 
 FillEpsilonPlotForZ::FillEpsilonPlotForZ(const edm::ParameterSet& iConfig)
 {
