@@ -46,11 +46,11 @@ Silent           = False                 # True->Fill modules is silent; False->
 NameTag          = 'TestZ_'                   # Tag to the names to avoid overlap
 queueForDaemon   = 'cmscaf1nw'          # Option suggested: 2nw/2nd, 1nw/1nd, cmscaf1nw/cmscaf1nd... even cmscaf2nw
 queue            = 'cmscaf1nd'
-nIterations      = 5
+nIterations      = 14
 SubmitFurtherIterationsFromExisting = False
 startingCalibMap = '' # used  only if SubmitFurtherIterationsFromExisting is True
 if (SubmitFurtherIterationsFromExisting):  # choose path of the calibMap you want to start from
-   startingCalibMap = "/store/group/dpg_ecal/alca_ecalcalib/piZero2016/mciprian/AlcaP0_2016_json2p6fb/iter_7/AlcaP0_2016_json2p07fb_calibMap.root"
+   startingCalibMap = "/store/user/crovelli/TestZ_debug/iter_0/TestZ_calibMap.root"
 #N files
 ijobmax          = 5                     # 5 number of files per job
 nHadd            = 35                    # 35 number of files per hadd
