@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import subprocess, time, sys, os
-from methods import *
+from methodsZ import *
 
 if len(sys.argv) != 7:
     print "usage thisPyton.py pwd queue iter-to-resubmit Systparam onlyFIT onlyFinalHADD"
