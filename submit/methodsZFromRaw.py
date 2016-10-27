@@ -54,13 +54,13 @@ def printFillFromRawCfgZ1( outputfile, iteration ):
     outputfile.write('process.load("RecoEcal.EgammaClusterProducers.particleFlowSuperClusterECAL_cfi")\n')   
     outputfile.write('\n') 
 
-    outputfile.write('### PF superclusters\n')         # chiara: la regression e' accesa
+    outputfile.write('### PF superclusters\n')       
     outputfile.write('process.particleFlowSuperClusterECAL.PFBasicClusterCollectionBarrel = cms.string("recalibParticleFlowBasicClusterECALBarrel")\n')    
     outputfile.write('process.particleFlowSuperClusterECAL.PFSuperClusterCollectionBarrel = cms.string("recalibParticleFlowSuperClusterECALBarrel")\n')    
     outputfile.write('process.particleFlowSuperClusterECAL.PFBasicClusterCollectionEndcap = cms.string("recalibParticleFlowBasicClusterECALEndcap")\n')    
     outputfile.write('process.particleFlowSuperClusterECAL.PFSuperClusterCollectionEndcap = cms.string("recalibParticleFlowSuperClusterECALEndcap")\n')    
     outputfile.write('process.particleFlowSuperClusterECAL.PFBasicClusterCollectionPreshower = cms.string("recalibParticleFlowBasicClusterECALPreshower")\n')    
-    outputfile.write('process.particleFlowSuperClusterECAL.PFSuperClusterCollectionEndcapWithPreshower = cms.string("recalibParticleFlowSuperClusterECALEndcapWithPreshower")\n')    
+    outputfile.write('process.particleFlowSuperClusterECAL.PFSuperClusterCollectionEndcapWithPreshower = cms.string("recalibParticleFlowSuperClusterECALEndcapWithPreshower")\n')
     outputfile.write('\n') 
 
     outputfile.write("process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(" + nEventsPerJob +") )\n")  
@@ -107,8 +107,8 @@ def printFillFromRawCfgZ2( outputfile, pwd , iteration, outputDir, ijob ):
 
     outputfile.write("\n")
     outputfile.write("### Not to be changed\n")
-    outputfile.write("process.analyzerFillEpsilonForZ.EBRecHitCollectionTag = cms.untracked.InputTag('ecalRecHit','EcalRecHitsEB')\n")
-    outputfile.write("process.analyzerFillEpsilonForZ.EERecHitCollectionTag = cms.untracked.InputTag('ecalRecHit','EcalRecHitsEE')\n")
+    outputfile.write("process.analyzerFillEpsilonForZ.EBRecHitCollectionTag = cms.untracked.InputTag('ecalRecalRecHit','EcalRecalRecHitsEB')\n")
+    outputfile.write("process.analyzerFillEpsilonForZ.EERecHitCollectionTag = cms.untracked.InputTag('ecalRecalRecHit','EcalRecalRecHitsEE')\n")
     outputfile.write("process.analyzerFillEpsilonForZ.EBSuperClusterCollectionTag = cms.untracked.InputTag('particleFlowSuperClusterECAL','recalibParticleFlowSuperClusterECALBarrel','analyzerFillEpsilonForZ')\n")    
     outputfile.write("process.analyzerFillEpsilonForZ.EESuperClusterCollectionTag = cms.untracked.InputTag('particleFlowSuperClusterECAL','recalibParticleFlowSuperClusterECALEndcapWithPreshower','analyzerFillEpsilonForZ')\n")    
     outputfile.write("process.analyzerFillEpsilonForZ.ElectronCollectionTag = cms.untracked.InputTag('gedGsfElectrons','','RECO')\n") 
