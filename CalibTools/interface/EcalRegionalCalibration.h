@@ -9,6 +9,8 @@
 
 #include "DataFormats/DetId/interface/DetId.h"
 #include "DataFormats/CaloRecHit/interface/CaloCluster.h"
+#include "DataFormats/EcalRecHit/interface/EcalRecHitCollections.h"
+#include "DataFormats/EcalRecHit/interface/EcalRecHit.h"
 
 #include "CalibCode/CalibTools/interface/EcalCalibTypes.h"
 #include "CalibCode/CalibTools/interface/EcalCalibMap.h"
@@ -33,6 +35,7 @@ typedef std::vector< EnergyFraction > EnergyFractionVector;
 class EcalRegionalCalibrationBase{
     public:
         virtual RegionWeightVector getWeights(const reco::CaloCluster* clus, int subDetId ) const =0;
+        virtual RegionWeightVector getWeightsZ(const reco::CaloCluster* clus, int subDetId, const EcalRecHitCollection* theHits ) const =0;
         //EcalCalibMap<Type>* getCalibMap() =0;
         virtual  EcalCalibMapBase* getCalibMap() =0;
         virtual std::string printType() =0;
@@ -46,7 +49,8 @@ template<class Type> class EcalRegionalCalibration : public EcalRegionalCalibrat
         ~EcalRegionalCalibration(){}
 
         RegionWeightVector getWeights(const reco::CaloCluster* clus, int subDetId ) const;
-
+        RegionWeightVector getWeightsZ(const reco::CaloCluster* clus, int subDetId, const EcalRecHitCollection* theHits ) const;
+	
         //EcalCalibMap<Type>* getCalibMap() { 
         EcalCalibMapBase* getCalibMap() { 
             EcalCalibMapBase *basePtr = calibMap; 
@@ -84,11 +88,11 @@ EcalRegionalCalibration<Type>::EcalRegionalCalibration()
 //================================================================================================
 template<class Type>
 RegionWeightVector EcalRegionalCalibration<Type>::getWeights(const reco::CaloCluster* clus, int subDetId ) const {             
-//================================================================================================
-    RegionWeightVector weights;
-    
-    bool isEB = true;
-
+  //================================================================================================
+  RegionWeightVector weights;
+  
+  bool isEB = true;
+  
     if( subDetId == EcalBarrel ) { isEB = true; }
     else if( subDetId == EcalEndcap ) { isEB = false; }
     else throw cms::Exception("EcalRegionalCalibration::getWeights") << "Subdetector Id not recognized\n";
@@ -100,17 +104,18 @@ RegionWeightVector EcalRegionalCalibration<Type>::getWeights(const reco::CaloClu
     #ifdef DEBUG
     std::cout << "   -- cluster energy: " << clus->energy() << std::endl;
     #endif
-
+    
     for(EnergyFractionVector::const_iterator it =  enHits.begin(); it != enHits.end(); ++it) {
         uint32_t iR = isEB ? Type::iRegion( it->first ) : Type::iRegionEE( it->first );
         float energy = it->second;
+
         if(energy==0.) continue;
 
-        #ifdef DEBUG
-        std::cout << "id: " << isEB ? EBDetId(it->first) : EEDetId(it->first);
-        std::cout << " iR: " << iR << " E: " << energy
-             << std::endl;
-        #endif
+#ifdef DEBUG
+	std::cout << "id: " << isEB ? EBDetId(it->first) : EEDetId(it->first);
+	std::cout << "iR: " << iR << " E: " << energy
+		  << std::endl;
+#endif
 
         regionWeightMap[iR] += energy;
     } 
@@ -120,18 +125,78 @@ RegionWeightVector EcalRegionalCalibration<Type>::getWeights(const reco::CaloClu
         RegionWeight w; 
         w.iRegion = it2->first;
         // only positive weights
-        w.value   = (it2->second<0.) ? 0. : it2->second/clus->energy();
+	w.value   = (it2->second<0.) ? 0. : it2->second/clus->energy();   
         // no w>1. weight!
-        w.value   =  (w.value>1.) ? 1. : w.value;
+	w.value   =  (w.value>1.) ? 1. : w.value;  
         weights.push_back( w );
 
-        #ifdef DEBUG
+#ifdef DEBUG
         std::cout << "iR: " << w.iRegion << " energy: " << it2->second
-             << " weight: " << w.value
-             << std::endl;
-        #endif
+		  << " weight: " << w.value
+		  << std::endl;
+#endif
     }
     return weights;
+}
+
+
+//================================================================================================
+template<class Type>
+RegionWeightVector EcalRegionalCalibration<Type>::getWeightsZ(const reco::CaloCluster* clus, int subDetId, const EcalRecHitCollection* theHits ) const {             
+  
+//================================================================================================
+
+  RegionWeightVector weights;
+  
+  bool isEB = true;
+  if( subDetId == EcalBarrel ) { isEB = true; }
+  else if( subDetId == EcalEndcap ) { isEB = false; }
+  else throw cms::Exception("EcalRegionalCalibration::getWeightsZ") << "Subdetector Id not recognized\n";
+
+  // map to compute energy&weight for each region
+  std::map<uint32_t,float> regionWeightMap;
+  const EnergyFractionVector& enHits = clus->hitsAndFractions();
+
+#ifdef DEBUG
+  std::cout << "   -- cluster energy: " << clus->energy() << std::endl;
+#endif
+    
+  for(EnergyFractionVector::const_iterator it =  enHits.begin(); it != enHits.end(); ++it) {
+
+    // region
+    uint32_t iR = isEB ? Type::iRegion( it->first ) : Type::iRegionEE( it->first );
+
+    // fraction of the hit energy in this supercluster
+    float fraction = it->second;
+    if(fraction==0.) continue;
+
+    // Energy associated with the hit (this is RAW)
+    EcalRecHit tmpHit;
+    if (isEB)  tmpHit = *theHits->find(EBDetId(it->first)); 
+    if (!isEB) tmpHit = *theHits->find(EEDetId(it->first)); 
+    float rhEnergy = tmpHit.energy();
+
+    // total energy x fraction
+    regionWeightMap[iR] += rhEnergy*fraction;
+  } 
+
+  for(std::map<uint32_t,float>::const_iterator it2 = regionWeightMap.begin(); it2 != regionWeightMap.end(); ++it2) 
+    {
+      RegionWeight w; 
+      w.iRegion = it2->first;
+      // only positive weights
+      w.value   = (it2->second<0.) ? 0. : it2->second/clus->energy();   
+      // no w>1. weight!
+      w.value   =  (w.value>1.) ? 1. : w.value;  
+      weights.push_back( w );
+      
+#ifdef DEBUG
+      std::cout << "iR: " << w.iRegion << " energy: " << it2->second
+		<< " weight: " << w.value
+		<< std::endl;
+#endif
+    }
+  return weights;
 }
 
 

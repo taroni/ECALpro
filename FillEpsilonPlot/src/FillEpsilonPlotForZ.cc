@@ -120,19 +120,8 @@ FillEpsilonPlotForZ::~FillEpsilonPlotForZ() {
   outfile_->Write();
   outfile_->Close();
 
-  if( (Barrel_orEndcap_=="ONLY_BARREL" || Barrel_orEndcap_=="ALL_PLEASE" ) ) {
-    
-    deleteEpsilonPlot(weightedRescaleFactorEB, nRegionsEB_);
-    //deleteEpsilonPlot(unweightedRescaleFactorEB, nRegionsEB_);
-    //deleteEpsilonPlot(weightEB, nRegionsEB_);
-  }
-
-  if( (Barrel_orEndcap_=="ONLY_ENDCAP" || Barrel_orEndcap_=="ALL_PLEASE" ) ) {
-
-    deleteEpsilonPlot(weightedRescaleFactorEE, nRegionsEE_);
-    //deleteEpsilonPlot(unweightedRescaleFactorEE, nRegionsEE_);
-    //deleteEpsilonPlot(weightEE, nRegionsEE_);
-  }
+  if( Barrel_orEndcap_=="ONLY_BARREL" || Barrel_orEndcap_=="ALL_PLEASE" ) deleteEpsilonPlot(weightedRescaleFactorEB, nRegionsEB_);
+  if( Barrel_orEndcap_=="ONLY_ENDCAP" || Barrel_orEndcap_=="ALL_PLEASE" ) deleteEpsilonPlot(weightedRescaleFactorEE, nRegionsEE_);
 
   delete EventFlow;
   delete allEpsilon_EB;
@@ -422,12 +411,12 @@ void FillEpsilonPlotForZ::analyze(const edm::Event& iEvent, const edm::EventSetu
 
 
   if(Barrel_orEndcap_=="ONLY_BARREL" || Barrel_orEndcap_=="ALL_PLEASE" ) {
-    if (fabs(eta1)<1.5) getWeight(mass4tree, zeeCandidates[myBestZ].first,  MZ, thisEventW, EcalBarrel);     
-    if (fabs(eta2)<1.5) getWeight(mass4tree, zeeCandidates[myBestZ].second, MZ, thisEventW, EcalBarrel);     
+    if (fabs(eta1)<1.5) getWeight(mass4tree, zeeCandidates[myBestZ].first,  MZ, thisEventW, EcalBarrel, &(*hits));     
+    if (fabs(eta2)<1.5) getWeight(mass4tree, zeeCandidates[myBestZ].second, MZ, thisEventW, EcalBarrel, &(*hits));     
   }
   if(Barrel_orEndcap_=="ONLY_ENDCAP" || Barrel_orEndcap_=="ALL_PLEASE" ) {
-    if (fabs(eta1)>1.5) getWeight(mass4tree, zeeCandidates[myBestZ].first,  MZ, thisEventW, EcalEndcap);     
-    if (fabs(eta2)>1.5) getWeight(mass4tree, zeeCandidates[myBestZ].second, MZ, thisEventW, EcalEndcap);
+    if (fabs(eta1)>1.5) getWeight(mass4tree, zeeCandidates[myBestZ].first,  MZ, thisEventW, EcalEndcap, &(*ehits));     
+    if (fabs(eta2)>1.5) getWeight(mass4tree, zeeCandidates[myBestZ].second, MZ, thisEventW, EcalEndcap, &(*ehits));     
   }
 
   // -----------------------------------------------------------
@@ -450,9 +439,10 @@ void FillEpsilonPlotForZ::analyze(const edm::Event& iEvent, const edm::EventSetu
 // 
 // weighted with
 // weight2 = rawEne of SC / sum of raw energies of the SC hits in each module
-void FillEpsilonPlotForZ::getWeight(float recomass, calib::CalibElectronForZ* ele, float evweight, float mcWeight, int subDetId) {
+
+void FillEpsilonPlotForZ::getWeight(float recomass, calib::CalibElectronForZ* ele, float evweight, float mcWeight, int subDetId, const EcalRecHitCollection* theHits) {
   
-  RegionWeightVector wEle = regionalCalibration_->getWeights( ele->getParentSuperCluster(), subDetId ); 
+  RegionWeightVector wEle = regionalCalibration_->getWeightsZ( ele->getParentSuperCluster(), subDetId, theHits );     
 
   float tofill = recomass;
 
@@ -467,20 +457,18 @@ void FillEpsilonPlotForZ::getWeight(float recomass, calib::CalibElectronForZ* el
 
     for(RegionWeightVector::const_iterator it = wEle.begin(); it != wEle.end(); ++it) {
 
+      float corrToRawWeight = ele->getParentSuperCluster()->energy()/ele->getParentSuperCluster()->rawEnergy();
+
       const uint32_t& iR   = (*it).iRegion;
-      const float& weight2 = (*it).value;
+      const float& weight2 = (*it).value * corrToRawWeight;
       if (weight2>=0. && weight2<=1.) {
 	
 	if (subDetId==EcalBarrel) {
 	  weightedRescaleFactorEB[iR]->Fill(tofill,weight2*mcWeight);
-	  //unweightedRescaleFactorEB[iR]->Fill(tofill,1.*mcWeight);
-	  //weightEB[iR]->Fill(weight2,1.*mcWeight);
 	  allEpsilon_EB->Fill(tofill,weight2*mcWeight);
 	} else if (subDetId==EcalEndcap) {
 	  allEpsilon_EE->Fill(tofill,weight2*mcWeight);  
 	  weightedRescaleFactorEE[iR]->Fill(tofill,weight2*mcWeight);
-	  //unweightedRescaleFactorEE[iR]->Fill(tofill,1.*mcWeight);
-	  //weightEE[iR]->Fill(weight2,1.*mcWeight);
 	}
       }
     }
@@ -510,17 +498,11 @@ void FillEpsilonPlotForZ::endJob(){
   zMassVsIetaEB->Write();
   zMassVsETEB->Write();
 
-  if( Barrel_orEndcap_=="ONLY_BARREL" || Barrel_orEndcap_=="ALL_PLEASE" ) {
+  if( Barrel_orEndcap_=="ONLY_BARREL" || Barrel_orEndcap_=="ALL_PLEASE" ) 
     writeEpsilonPlot(weightedRescaleFactorEB,nRegionsEB_);
-    //writeEpsilonPlot(unweightedRescaleFactorEB,nRegionsEB_);
-    //writeEpsilonPlot(weightEB,nRegionsEB_);
-  }
 
-  if( Barrel_orEndcap_=="ONLY_ENDCAP" || Barrel_orEndcap_=="ALL_PLEASE" ) {
+  if( Barrel_orEndcap_=="ONLY_ENDCAP" || Barrel_orEndcap_=="ALL_PLEASE" ) 
     writeEpsilonPlot(weightedRescaleFactorEE,nRegionsEE_);
-    //writeEpsilonPlot(unweightedRescaleFactorEE,nRegionsEE_);
-    //writeEpsilonPlot(weightEE,nRegionsEE_);
-  }
 }
 
 // histo booking
@@ -535,19 +517,11 @@ void FillEpsilonPlotForZ::bookHistograms() {
     highH = maxInvMassCut_;
   }
 
-  if( Barrel_orEndcap_=="ONLY_BARREL" || Barrel_orEndcap_=="ALL_PLEASE" ) {
-
+  if( Barrel_orEndcap_=="ONLY_BARREL" || Barrel_orEndcap_=="ALL_PLEASE" ) 
     weightedRescaleFactorEB   = initializeEpsilonHistograms("WeightedRescaleFactorEB_channel_",  "WeightedRescaleFactorEB_channel_",   nRegionsEB_,0);
-    //unweightedRescaleFactorEB = initializeEpsilonHistograms("UnweightedRescaleFactorEB_channel_","UnweightedRescaleFactorEB_channel_", nRegionsEB_,0);
-    //weightEB = initializeEpsilonHistograms("WeightEB_channel_","WeightEB_channel_", nRegionsEB_,1);
-  }
 
-  if( (Barrel_orEndcap_=="ONLY_ENDCAP" || Barrel_orEndcap_=="ALL_PLEASE" ) ) {
-
+  if( (Barrel_orEndcap_=="ONLY_ENDCAP" || Barrel_orEndcap_=="ALL_PLEASE" ) ) 
     weightedRescaleFactorEE   = initializeEpsilonHistograms("WeightedRescaleFactorEE_channel_",  "WeightedRescaleFactorEE_channel_",   nRegionsEE_,0);
-    //unweightedRescaleFactorEE = initializeEpsilonHistograms("UnweightedRescaleFactorEE_channel_","UnweightedRescaleFactorEE_channel_", nRegionsEE_,0);
-    //weightEE = initializeEpsilonHistograms("WeightEE_channel_","WeightEE_channel_", nRegionsEE_,1);
-  }
 
   EventFlow = new TH1F("EventFlow", "EventFlow", 10, -0.5, 9.5 );
   EventFlow->GetXaxis()->SetBinLabel(1,"All Events"); 

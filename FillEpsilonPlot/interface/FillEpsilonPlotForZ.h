@@ -14,7 +14,6 @@
 #include "CalibCode/CalibTools/interface/EcalRegionalCalibration.h"
 #include "CalibCode/CalibTools/interface/CalibElectronForZ.h"
 #include "CalibCode/FillEpsilonPlot/interface/JSON.h"
-// #include "Calibration/Tools/interface/EcalRingCalibrationTools.h"
 #include "Calibration/EcalCalibAlgos/interface/ZeeKinematicTools.h"
 
 #include "DataFormats/EcalRecHit/interface/EcalRecHitCollections.h"
@@ -66,7 +65,7 @@ class FillEpsilonPlotForZ : public edm::EDAnalyzer {
 
       // ---------- user defined ------------------------
       // void getWeight(float recomass, calib::CalibElectronForZ* ele, float evweight, float mcWeight);
-      void getWeight(float recomass, calib::CalibElectronForZ* ele, float evweight, float mcWeight, int subDetId);
+      void getWeight(float recomass, calib::CalibElectronForZ* ele, float evweight, float mcWeight, int subDetId, const EcalRecHitCollection*);
       void bookHistograms();
       TH1F** initializeEpsilonHistograms(const char *name, const char *title, int size, int isweight );  
       void deleteEpsilonPlot(TH1F **h, int size); 
