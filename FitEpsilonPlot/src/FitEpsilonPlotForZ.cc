@@ -22,9 +22,8 @@
 #include "DataFormats/EcalDetId/interface/EBDetId.h"
 #include "DataFormats/EcalDetId/interface/EEDetId.h"
 
-#include "RooGaussian.h"
-#include "RooChebychev.h"
-#include "RooPolynomial.h"
+#include "RooCBShape.h"
+#include "RooExponential.h"
 #include "RooDataHist.h"
 #include "RooAbsPdf.h"
 #include "RooAddPdf.h"
@@ -209,10 +208,6 @@ void FitEpsilonPlotForZ::saveCoefficients()  {
   float      fit_mean_err;
   float      fit_sigma;
   float      fit_Snorm;
-  float      fit_b0;
-  float      fit_b1;    
-  float      fit_b2;    
-  float      fit_b3;    
   float      fit_Bnorm; 
   int ix;
   int iy;
@@ -245,10 +240,6 @@ void FitEpsilonPlotForZ::saveCoefficients()  {
   treeEB->Branch("fit_mean_err",&fit_mean_err,"fit_mean_err/F");
   treeEB->Branch("fit_sigma",&fit_sigma,"fit_sigma/F");
   treeEB->Branch("fit_Snorm",&fit_Snorm,"fit_Snorm/F");
-  treeEB->Branch("fit_b0",&fit_b0,"fit_b0/F");
-  treeEB->Branch("fit_b1",&fit_b1,"fit_b1/F");
-  treeEB->Branch("fit_b2",&fit_b2,"fit_b2/F");
-  treeEB->Branch("fit_b3",&fit_b3,"fit_b3/F");
   treeEB->Branch("fit_Bnorm",&fit_Bnorm,"fit_Bnorm/F");
   
   /// endcap
@@ -270,10 +261,6 @@ void FitEpsilonPlotForZ::saveCoefficients()  {
   treeEE->Branch("fit_mean_err",&fit_mean_err,"fit_mean_err/F");
   treeEE->Branch("fit_sigma",&fit_sigma,"fit_sigma/F");
   treeEE->Branch("fit_Snorm",&fit_Snorm,"fit_Snorm/F");
-  treeEE->Branch("fit_b0",&fit_b0,"fit_b0/F");
-  treeEE->Branch("fit_b1",&fit_b1,"fit_b1/F");
-  treeEE->Branch("fit_b2",&fit_b2,"fit_b2/F");
-  treeEE->Branch("fit_b3",&fit_b3,"fit_b3/F");
   treeEE->Branch("fit_Bnorm",&fit_Bnorm,"fit_Bnorm/F");
   
   
@@ -297,10 +284,6 @@ void FitEpsilonPlotForZ::saveCoefficients()  {
       fit_mean_err = EBmap_mean_err[ebid.hashedIndex()];
       fit_sigma  = EBmap_sigma[ebid.hashedIndex()];
       fit_Snorm  = EBmap_Snorm[ebid.hashedIndex()];
-      fit_b0     = EBmap_b0[ebid.hashedIndex()];
-      fit_b1     = EBmap_b1[ebid.hashedIndex()];
-      fit_b2     = EBmap_b2[ebid.hashedIndex()];
-      fit_b3     = EBmap_b3[ebid.hashedIndex()];
       fit_Bnorm  = EBmap_Bnorm[ebid.hashedIndex()];
       regCoeff = regionalCalibration_->getCalibMap()->coeff(*iid);
       treeEB->Fill();
@@ -328,10 +311,6 @@ void FitEpsilonPlotForZ::saveCoefficients()  {
       fit_mean_err = EEmap_mean_err[eeid.hashedIndex()];
       fit_sigma  = EEmap_sigma[eeid.hashedIndex()];
       fit_Snorm  = EEmap_Snorm[eeid.hashedIndex()];
-      fit_b0     = EEmap_b0[eeid.hashedIndex()];
-      fit_b1     = EEmap_b1[eeid.hashedIndex()];
-      fit_b2     = EEmap_b2[eeid.hashedIndex()];
-      fit_b3     = EEmap_b3[eeid.hashedIndex()];
       fit_Bnorm  = EEmap_Bnorm[eeid.hashedIndex()];
       treeEE->Fill();
     }
@@ -406,15 +385,18 @@ void FitEpsilonPlotForZ::analyze(const edm::Event& iEvent, const edm::EventSetup
 	int iMin = weightedRescaleFactorEB[j]->GetXaxis()->FindBin(71);
 	int iMax = weightedRescaleFactorEB[j]->GetXaxis()->FindBin(109);
 	double integral = weightedRescaleFactorEB[j]->Integral(iMin, iMax);
-	cout << "chiara: " << iMin << " " << iMax << " " << integral << endl;
+
 	if(integral>60.) {        
-	  ZFitResult fitres = FitMassPeakRooFit( weightedRescaleFactorEB[j], 70., 110., j, 1, ZEB, 0); 
+	  ZFitResult fitres = FitMassPeakRooFit( weightedRescaleFactorEB[j], 70., 110., j, ZEB, 0); 
 	  RooRealVar* mean_fitresult = (RooRealVar*)(((fitres.res)->floatParsFinal()).find("mean"));
 	  mean = mean_fitresult->getVal();
 	  float r2 = mean/MZ;
 	  r2 = r2*r2;
 	  float thechi2 = fitres.chi2;
-	  if( thechi2<5 ) 
+	  float thendf  = fitres.dof;
+	  float thechi2ndf = thechi2/thendf;
+	  //if( thechi2<5 ) 
+	  if( thechi2ndf<5 ) 
 	    mean = 0.5 * ( r2 - 1. );
 	  else  
 	    mean = 0.;
@@ -422,7 +404,6 @@ void FitEpsilonPlotForZ::analyze(const edm::Event& iEvent, const edm::EventSetup
 	  mean = 0.;
 	}
       }
-      if (mean!=0) cout << "chiaraaaaaaaaaaaaaa "<< mean << endl; 
 
       std::vector<DetId> ids = regionalCalibration_->allDetIdsInEBRegion(j);
       for(std::vector<DetId>::const_iterator iid = ids.begin(); iid != ids.end(); ++iid) {
@@ -475,13 +456,16 @@ void FitEpsilonPlotForZ::analyze(const edm::Event& iEvent, const edm::EventSetup
 	int iMax = weightedRescaleFactorEE[jR]->GetXaxis()->FindBin(109);
 	double integral = weightedRescaleFactorEE[jR]->Integral(iMin, iMax);
 	if(integral>60.) {
-	  ZFitResult fitres = FitMassPeakRooFit( weightedRescaleFactorEE[jR], 70., 110., jR, 1, ZEE, 0);  
+	  ZFitResult fitres = FitMassPeakRooFit( weightedRescaleFactorEE[jR], 70., 110., jR, ZEE, 0);  
 	  RooRealVar* mean_fitresult = (RooRealVar*)(((fitres.res)->floatParsFinal()).find("mean"));
 	  mean = mean_fitresult->getVal();
 	  float r2 = mean/MZ;
 	  r2 = r2*r2;
 	  float thechi2 = fitres.chi2;
-	  if( thechi2<5 ) 
+	  float thendf  = fitres.dof;
+	  float thechi2ndf = thechi2/thendf;
+	  //if( thechi2<5 ) 
+	  if( thechi2ndf<5 ) 
 	    mean = 0.5 * ( r2 - 1. );
 	  else  
 	    mean = 0.;
@@ -498,39 +482,21 @@ void FitEpsilonPlotForZ::analyze(const edm::Event& iEvent, const edm::EventSetup
   }  // if you have to fit Endcap
 }
 
-ZFitResult FitEpsilonPlotForZ::FitMassPeakRooFit(TH1F* h, double xlo, double xhi,  uint32_t HistoIndex, int ngaus, FitMode mode, int niter) {
+ZFitResult FitEpsilonPlotForZ::FitMassPeakRooFit(TH1F* h, double xlo, double xhi,  uint32_t HistoIndex, FitMode mode, int niter) {
 
   // variables
   RooRealVar x("x","ee invariant mass",xlo, xhi, "GeV/c^2");                  
-  RooRealVar mean("mean","Z peak position", 91.,  86., 96.,"GeV/c^{2}");
-  RooRealVar sigma("sigma","Z core #sigma",2., 0.001,10.,"GeV/c^{2}");
-  RooRealVar sigmaTail("sigmaTail","Z tail #sigma",5., 0.01,10.,"GeV/c^{2}");  
 
   // signal
-  RooGaussian gaus("gaus","Core Gaussian",x, mean,sigma);
-  RooGaussian gaus2("gaus2","Tail Gaussian",x, mean,sigmaTail);
-  RooRealVar fcore("fcore","f_{core}",0.9,0.,1.);
-  RooAddPdf  signal("signal","signal model",RooArgList(gaus,gaus2),fcore);
+  RooRealVar mean ("mean", "mean", 91.,  80., 95.);
+  RooRealVar sigma("sigma","sigma", 1., 0.01, 5.);     
+  RooRealVar alpha("alpha","alpha",1.,0.,2.);
+  RooRealVar CBn("CBn","CBn",1.5,0.,10.);
+  RooCBShape signal("signal","signal", x, mean, sigma, alpha, CBn);
 
   // background
-  RooRealVar p0("p0","p0", 1000.,-1.e5,1.e5);
-  RooRealVar p1("p1","p1", -3000.,-1.e5,1.e5);
-  RooRealVar p2("p2","p2", 10000.,-1.e5,1.e5);
-  RooRealVar p3("p3","p3", -10000.,-1.e5,1.e5);
-  RooRealVar p4("p4","p4",-4000.,-1.e5,1.e5);
-  RooRealVar p5("p5","p5", 5.,-1.e5,1.e5);
-  RooRealVar p6("p6","p6", 6.,-1.e5,1.e5);
-
-  RooRealVar cb0("cb0","cb0", 0.2, -1.,1.);
-  RooRealVar cb1("cb1","cb1",-0.1, -1.,1.);
-  RooRealVar cb2("cb2","cb2", 0.1,  0.,1.);
-  RooRealVar cb3("cb3","cb3",-0.1, -0.5,0.5);
-  RooRealVar cb4("cb4","cb4", 0.1, -1.,1.);
-  RooRealVar cb5("cb5","cb5", 0.1, -1.,1.);
-  RooRealVar cb6("cb6","cb6", 0.3, -1.,1.);
-
-  RooArgList cbpars(cb0,cb1,cb2);
-  RooChebychev bkg("bkg","bkg model", x, cbpars );
+  RooRealVar expShape("expShape","expShape",-1.,-2.,0.);
+  RooExponential bkg("background","background", x, expShape);
 
   // yields
   RooRealVar Nsig("Nsig","Z yield",1000.,0.,1.e7);
@@ -540,27 +506,24 @@ ZFitResult FitEpsilonPlotForZ::FitMassPeakRooFit(TH1F* h, double xlo, double xhi
 
   // full model
   RooAbsPdf* model=0;
-  RooAddPdf model1("model","sig+bkg",RooArgList(gaus,bkg),RooArgList(Nsig,Nbkg));
-  RooAddPdf model2("model","sig+bkg",RooArgList(signal,bkg),RooArgList(Nsig,Nbkg));
-  if(ngaus==1)      model = &model1;
-  else if(ngaus==2) model = &model2;
-
+  RooAddPdf model1("model","sig+bkg",RooArgList(signal,bkg),RooArgList(Nsig,Nbkg));
+  model = &model1;
 
   // Fit
-  RooDataHist dh("dh","#gamma#gamma invariant mass",RooArgList(x),h);
+  RooDataHist dh("dh","ee invariant mass",RooArgList(x),h);
   RooNLLVar nll("nll","log likelihood var",*model,dh, RooFit::Extended(true));
   RooMinuit m(nll);
   m.setVerbose(kFALSE);
-  //m.setVerbose(kTRUE);                                                                                                                                                   
+
   m.migrad();
-  //m.hesse();                                                                                                                                                             
+
   RooFitResult* res = m.save() ;
+
+  // chi2 and S/B
   RooChi2Var chi2("chi2","chi2 var",*model,dh, true);
   int ndof = h->GetNbinsX() - res->floatParsFinal().getSize();
-
-  // S/B and chi2                                                                                                                                                   
   x.setRange("sobRange",mean.getVal()-3.*sigma.getVal(), mean.getVal()+3.*sigma.getVal());
-  RooAbsReal* integralSig = gaus.createIntegral(x,NormSet(x),Range("sobRange"));
+  RooAbsReal* integralSig = signal.createIntegral(x,NormSet(x),Range("sobRange"));
   RooAbsReal* integralBkg = bkg.createIntegral(x,NormSet(x),Range("sobRange"));
   float normSig = integralSig->getVal();
   float normBkg = integralBkg->getVal();
@@ -602,10 +565,6 @@ ZFitResult FitEpsilonPlotForZ::FitMassPeakRooFit(TH1F* h, double xlo, double xhi
     EBmap_mean_err[HistoIndex]=mean.getError();
     EBmap_sigma[HistoIndex]=sigma.getVal();
     EBmap_Snorm[HistoIndex]=normSig;
-    EBmap_b0[HistoIndex]=cb0.getVal();
-    EBmap_b1[HistoIndex]=cb1.getVal();
-    EBmap_b2[HistoIndex]=cb2.getVal();
-    EBmap_b3[HistoIndex]=cb3.getVal();
     EBmap_Bnorm[HistoIndex]=normBkg;
   }
   if(mode==ZEE){        
@@ -617,10 +576,6 @@ ZFitResult FitEpsilonPlotForZ::FitMassPeakRooFit(TH1F* h, double xlo, double xhi
     EEmap_mean_err[HistoIndex]=mean.getError();
     EEmap_sigma[HistoIndex]=sigma.getVal();
     EEmap_Snorm[HistoIndex]=normSig;
-    EEmap_b0[HistoIndex]=cb0.getVal();
-    EEmap_b1[HistoIndex]=cb1.getVal();
-    EEmap_b2[HistoIndex]=cb2.getVal();
-    EEmap_b3[HistoIndex]=cb3.getVal();
     EEmap_Bnorm[HistoIndex]=normBkg;
   }
 
@@ -647,9 +602,9 @@ ZFitResult FitEpsilonPlotForZ::FitMassPeakRooFit(TH1F* h, double xlo, double xhi
 
   ZFitResult fitres = zres;               
   if(mode==ZEB && xframe->chiSquare()>5  ){
-    if(niter==0) fitres = FitMassPeakRooFit( h, xlo, xhi, HistoIndex, ngaus, mode, 1);
-    if(niter==1) fitres = FitMassPeakRooFit( h, xlo, xhi, HistoIndex, ngaus, mode, 2);
-    if(niter==2) fitres = FitMassPeakRooFit( h, xlo, xhi, HistoIndex, ngaus, mode, 3);
+    if(niter==0) fitres = FitMassPeakRooFit( h, xlo, xhi, HistoIndex, mode, 1);   
+    if(niter==1) fitres = FitMassPeakRooFit( h, xlo, xhi, HistoIndex, mode, 2);
+    if(niter==2) fitres = FitMassPeakRooFit( h, xlo, xhi, HistoIndex, mode, 3);
   }
 
   if(StoreForTest_ && niter==0){
