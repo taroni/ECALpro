@@ -122,25 +122,11 @@ class FillEpsilonPlotForZ : public edm::EDAnalyzer {
       TH1F **unweightedRescaleFactorEE;
       TH1F **weightEE;
       
-      TH2F *h2_xtalRecalibCoeffEB;
-      TH2F *h2_xtalRecalibCoeffEEp;
-      TH2F *h2_xtalRecalibCoeffEEm;
-      TH1F *h1_residualMiscalibEB;
-      TH1F *h1_residualMiscalibEEp;
-      TH1F *h1_residualMiscalibEEm;
       TH1F *EventFlow;
       TH1F *allEpsilon_EE; 
       TH1F *allEpsilon_EEnw; 
       TH1F *allEpsilon_EB;
       TH1F *allEpsilon_EBnw;
-      TH2F *entries_EEp;
-      TH2F *entries_EEm;
-      TH2F *entries_EB;
-      TH2F *Occupancy_EEp;
-      TH2F *Occupancy_EEm;
-      TH2F *Occupancy_EB;
-      TH2F *zMassVsIetaEB;
-      TH2F *zMassVsETEB;
 
       TTree *myTree;
       int   isEBEB;
