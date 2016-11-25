@@ -46,7 +46,8 @@ class FitEpsilonPlotForZ : public edm::EDAnalyzer {
   void loadEpsilonPlot(char *filename);
   void saveCoefficients();
   void deleteEpsilonPlot(TH1F **h, int size);
-  ZFitResult FitMassPeakRooFit(TH1F* h,double xlo, double xhi, uint32_t HistoIndex, int ngaus=1, FitMode mode=ZEB, int niter=0);
+  //ZFitResult FitMassPeakRooFit(TH1F* h,double xlo, double xhi, uint32_t HistoIndex, int ngaus=1, FitMode mode=ZEB, int niter=0);
+  ZFitResult FitMassPeakRooFit(TH1F* h,double xlo, double xhi, uint32_t HistoIndex, FitMode mode=ZEB, int niter=0);
   
   // ----------member data ---------------------------
   EcalRegionalCalibration<EcalCalibType::Xtal> xtalCalib;
@@ -82,10 +83,10 @@ class FitEpsilonPlotForZ : public edm::EDAnalyzer {
   std::map<int,float> EBmap_mean_err;
   std::map<int,float> EBmap_sigma;
   std::map<int,float> EBmap_Snorm;
-  std::map<int,float> EBmap_b0;
-  std::map<int,float> EBmap_b1;
-  std::map<int,float> EBmap_b2;
-  std::map<int,float> EBmap_b3;
+  //std::map<int,float> EBmap_b0;
+  //std::map<int,float> EBmap_b1;
+  //std::map<int,float> EBmap_b2;
+  //std::map<int,float> EBmap_b3;
   std::map<int,float> EBmap_Bnorm;
   
   std::map<int,float> EEmap_Signal;
@@ -96,10 +97,10 @@ class FitEpsilonPlotForZ : public edm::EDAnalyzer {
   std::map<int,float> EEmap_mean_err;
   std::map<int,float> EEmap_sigma;
   std::map<int,float> EEmap_Snorm;
-  std::map<int,float> EEmap_b0;
-  std::map<int,float> EEmap_b1;
-  std::map<int,float> EEmap_b2;
-  std::map<int,float> EEmap_b3;
+  //std::map<int,float> EEmap_b0;
+  //std::map<int,float> EEmap_b1;
+  //std::map<int,float> EEmap_b2;
+  //std::map<int,float> EEmap_b3;
   std::map<int,float> EEmap_Bnorm;
 };
 
