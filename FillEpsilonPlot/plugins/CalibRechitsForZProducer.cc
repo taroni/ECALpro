@@ -69,15 +69,17 @@ void CalibRechitsForZProducer::produce(edm::Event& iEvent, const edm::EventSetup
   if(Barrel_orEndcap_=="ONLY_BARREL" || Barrel_orEndcap_=="ALL_PLEASE" ) {
    
     for(EBRecHitCollection::const_iterator itb= ebHandle->begin(); itb != ebHandle->end(); ++itb ) { 
-      
+
       EBDetId tmp_id(itb->id());
-      float tmp_ene = itb->energy();
       float rh_calib = regionalCalibration_->getCalibMap()->coeff(tmp_id); 
 
       // calibrated energy
+      float tmp_ene = itb->energy();
       float calib_ene = tmp_ene * rh_calib;
 
-      EcalRecHit aHit( itb->id(), calib_ene, itb->time() );
+      // new rechit
+      EcalRecHit aHit( *itb );
+      aHit.setEnergy(calib_ene);
       EBNewRecHits->push_back( aHit );
     }
   }
@@ -88,13 +90,15 @@ void CalibRechitsForZProducer::produce(edm::Event& iEvent, const edm::EventSetup
     for(EERecHitCollection::const_iterator ite= eeHandle->begin(); ite != eeHandle->end(); ++ite ) { 
       
       EEDetId tmp_id(ite->id());
-      float tmp_ene = ite->energy();
       float rh_calib = regionalCalibration_->getCalibMap()->coeff(tmp_id); 
 
       // calibrated energy
+      float tmp_ene = ite->energy();
       float calib_ene = tmp_ene * rh_calib;
 
-      EcalRecHit aHit( ite->id(), calib_ene, ite->time() );
+      // new rechit
+      EcalRecHit aHit( *ite );
+      aHit.setEnergy(calib_ene);
       EENewRecHits->push_back( aHit );
     }
   }
