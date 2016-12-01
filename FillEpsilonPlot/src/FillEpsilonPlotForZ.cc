@@ -128,8 +128,6 @@ FillEpsilonPlotForZ::~FillEpsilonPlotForZ() {
   delete allEpsilon_EBnw;
   delete allEpsilon_EE;
   delete allEpsilon_EEnw;
-  delete zMassVsIetaEB;
-  delete zMassVsETEB;
 
   delete myTree;
 
@@ -219,7 +217,7 @@ void FillEpsilonPlotForZ::analyze(const edm::Event& iEvent, const edm::EventSetu
 
   // Electrons
   iEvent.getByToken ( ElectronCollectionToken_, electronCollection );
-
+  
 #ifdef DEBUG
   cout << "DEBUG: ";
   std::cout<<"electronCollection->size() = " << electronCollection->size() << std::endl;
@@ -277,14 +275,14 @@ void FillEpsilonPlotForZ::analyze(const edm::Event& iEvent, const edm::EventSetu
     calibElectrons.push_back(calib::CalibElectronForZ(&(*eleIt),sc,&(*hits),&(*ehits)));
 
 #ifdef DEBUG
-  cout << "DEBUG: ";
+    cout << "DEBUG: ";
     std::cout << "calibElectrons.back().getParentSuperCluster()->energy() = "
               << calibElectrons.back().getParentSuperCluster()->energy()
               << ", calibElectrons.back().getRecoElectron()->energy() = "
               << calibElectrons.back().getRecoElectron()->energy() << std::endl;
 #endif
   }
-
+  
 #ifdef DEBUG
   cout << "DEBUG: ";
   std::cout << "calibElectrons.size() = " << calibElectrons.size() << endl;
@@ -334,6 +332,7 @@ void FillEpsilonPlotForZ::analyze(const edm::Event& iEvent, const edm::EventSetu
       cout << "DEBUG: ";
       std::cout << "####################### mass = " << tmpMass << std::endl;
 #endif
+ 
       zeeCandidates.push_back(std::pair<calib::CalibElectronForZ*,calib::CalibElectronForZ*>(&(calibElectrons[e_it]),&(calibElectrons[p_it])));
 
       double DeltaMinv = fabs(tmpMass - MZ);
@@ -352,7 +351,6 @@ void FillEpsilonPlotForZ::analyze(const edm::Event& iEvent, const edm::EventSetu
   std::cout << "Found ZCandidates: " << myBestZ << std::endl;
 #endif
 
-
   // ----------------------------------------------------------
   // Mass window
   bool invMassBool = ( (tmpMass > minInvMassCut_) && (tmpMass < maxInvMassCut_) );
@@ -363,7 +361,6 @@ void FillEpsilonPlotForZ::analyze(const edm::Event& iEvent, const edm::EventSetu
   cout << "DEBUG: ";
   std::cout << "Found ZCandidates within mass window: " << myBestZ << std::endl;
 #endif
-
 
   // ----------------------------------------------------------
   // Classification:
@@ -394,11 +391,9 @@ void FillEpsilonPlotForZ::analyze(const edm::Event& iEvent, const edm::EventSetu
   EventFlow->Fill(8.,thisEventW);
 
   // TLorentzVectors
-  math::PtEtaPhiMLorentzVector e1P4( (zeeCandidates[myBestZ].first->getParentSuperCluster()->energy()/zeeCandidates[myBestZ].first->getRecoElectron()->eta()), zeeCandidates[myBestZ].first->getRecoElectron()->eta(), zeeCandidates[myBestZ].first->getRecoElectron()->phi(), 0. );
-  math::PtEtaPhiMLorentzVector e2P4( (zeeCandidates[myBestZ].second->getParentSuperCluster()->energy()/zeeCandidates[myBestZ].second->getRecoElectron()->eta()), zeeCandidates[myBestZ].second->getRecoElectron()->eta(), zeeCandidates[myBestZ].second->getRecoElectron()->phi(), 0. );
-  math::PtEtaPhiMLorentzVector zP4 = e1P4 + e2P4;
-  zMassVsIetaEB->Fill( fabs(zP4.eta())/0.0174, zP4.mass());
-  zMassVsETEB->Fill(zP4.Pt(), zP4.mass());
+  //math::PtEtaPhiMLorentzVector e1P4( (zeeCandidates[myBestZ].first->getParentSuperCluster()->energy()/zeeCandidates[myBestZ].first->getRecoElectron()->eta()), zeeCandidates[myBestZ].first->getRecoElectron()->eta(), zeeCandidates[myBestZ].first->getRecoElectron()->phi(), 0. );
+  //math::PtEtaPhiMLorentzVector e2P4( (zeeCandidates[myBestZ].second->getParentSuperCluster()->energy()/zeeCandidates[myBestZ].second->getRecoElectron()->eta()), zeeCandidates[myBestZ].second->getRecoElectron()->eta(), zeeCandidates[myBestZ].second->getRecoElectron()->phi(), 0. );
+  //math::PtEtaPhiMLorentzVector zP4 = e1P4 + e2P4;
   
 
   // -----------------------------------------------------------
@@ -408,7 +403,6 @@ void FillEpsilonPlotForZ::analyze(const edm::Event& iEvent, const edm::EventSetu
   } else if (massMethod_ == "SCMass" ) {
     mass4tree = invMassCalc(zeeCandidates[myBestZ].first->getParentSuperCluster()->energy(), zeeCandidates[myBestZ].first->getParentSuperCluster()->position().eta(), zeeCandidates[myBestZ].first->getParentSuperCluster()->position().phi(), zeeCandidates[myBestZ].second->getParentSuperCluster()->energy(), zeeCandidates[myBestZ].second->getParentSuperCluster()->position().eta(), zeeCandidates[myBestZ].second->getParentSuperCluster()->position().phi());
   }  
-
 
   if(Barrel_orEndcap_=="ONLY_BARREL" || Barrel_orEndcap_=="ALL_PLEASE" ) {
     if (fabs(eta1)<1.5) getWeight(mass4tree, zeeCandidates[myBestZ].first,  MZ, thisEventW, EcalBarrel, &(*hits));     
@@ -461,6 +455,7 @@ void FillEpsilonPlotForZ::getWeight(float recomass, calib::CalibElectronForZ* el
 
       const uint32_t& iR   = (*it).iRegion;
       const float& weight2 = (*it).value * corrToRawWeight;
+
       if (weight2>=0. && weight2<=1.) {
 	
 	if (subDetId==EcalBarrel) {
@@ -495,8 +490,6 @@ void FillEpsilonPlotForZ::endJob(){
   allEpsilon_EBnw->Write();
   allEpsilon_EE->Write();
   allEpsilon_EEnw->Write();
-  zMassVsIetaEB->Write();
-  zMassVsETEB->Write();
 
   if( Barrel_orEndcap_=="ONLY_BARREL" || Barrel_orEndcap_=="ALL_PLEASE" ) 
     writeEpsilonPlot(weightedRescaleFactorEB,nRegionsEB_);
@@ -538,14 +531,6 @@ void FillEpsilonPlotForZ::bookHistograms() {
   allEpsilon_EBnw = new TH1F("allEpsilon_EBnw", "allEpsilon_EBnw", nbins, lowH, highH);
   allEpsilon_EE   = new TH1F("allEpsilon_EE",   "allEpsilon_EE",   nbins, lowH, highH);
   allEpsilon_EEnw = new TH1F("allEpsilon_EEnw", "allEpsilon_EEnw", nbins, lowH, highH);
-
-  zMassVsIetaEB = new TH2F("zMassVsIetaEB","Z mass vs i#eta",85, 0.5, 85.5, 80, 70., 110.);
-  zMassVsIetaEB->GetXaxis()->SetTitle("i#eta");
-  zMassVsIetaEB->GetYaxis()->SetTitle("Z mass");
-
-  zMassVsETEB = new TH2F("zMassVsETEB", "Z mass vs E_{T}(pi^{0})",120,0.,20.,80, 70., 110.);
-  zMassVsETEB->GetXaxis()->SetTitle("E_{T}(pi^{0})");
-  zMassVsETEB->GetYaxis()->SetTitle("Z mass");
 }
 
 void FillEpsilonPlotForZ::deleteEpsilonPlot(TH1F **h, int size) {
