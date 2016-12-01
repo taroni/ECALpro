@@ -18,8 +18,14 @@ namespace calib
     
   public:
     
-    CalibElectronForZ();
-
+  CalibElectronForZ() : 
+    theElectron_(0), 
+      theParentSC_(0), 
+      theHits_(0), 
+      theEEHits_(0) 
+	{ 
+	};
+    
   CalibElectronForZ(const reco::GsfElectron* ele,const EcalRecHitCollection* theHits, const EcalRecHitCollection* theEEHits) : 
     theElectron_(ele),
       theHits_(theHits), 
@@ -37,7 +43,6 @@ namespace calib
     
     ~CalibElectronForZ() {};
     
-    std::vector< std::pair<int,float> > getCalibModulesWeights(TString calibtype);
     const reco::GsfElectron* getRecoElectron() { return theElectron_; }
     const reco::SuperCluster* getParentSuperCluster() { return theParentSC_; }
     const EcalRecHitCollection* getRecHits() { return theHits_; }
