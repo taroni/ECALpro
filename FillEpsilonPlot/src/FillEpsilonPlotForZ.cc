@@ -132,7 +132,7 @@ FillEpsilonPlotForZ::~FillEpsilonPlotForZ() {
   delete myTree;
 
   //JSON
-  delete myjson;
+  if( jsonFile_!="" ) delete myjson;
 
 #ifdef DEBUG      
   cout << "DEBUG: Destructor" << endl;
