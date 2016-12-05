@@ -70,6 +70,7 @@ FitEpsilonPlotForZ::FitEpsilonPlotForZ(const edm::ParameterSet& iConfig) {
   else if(currentIteration_ > 0) {
     sprintf(fileName,"%s", calibMapPath_.c_str());
     regionalCalibration_->getCalibMap()->loadCalibMapFromFile(fileName);
+    cout << "FIT_EPSILON_FOR_Z: :loading calibration coefficient map from " << fileName << endl;
   }
 
   // # of regions
