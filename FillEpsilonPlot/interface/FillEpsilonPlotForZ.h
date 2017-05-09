@@ -2,7 +2,7 @@
 #include "TH2F.h"
 #include "TH1F.h"
 #include "TTree.h"
-
+#include <vector>
 
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/EDAnalyzer.h"
@@ -25,8 +25,11 @@
 #include "DataFormats/EgammaReco/interface/BasicCluster.h"
 #include "DataFormats/EgammaReco/interface/BasicClusterFwd.h"
 #include "DataFormats/CaloRecHit/interface/CaloClusterFwd.h"
+#include "DataFormats/VertexReco/interface/Vertex.h"
+#include "DataFormats/VertexReco/interface/VertexFwd.h"
 
 #include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
+#include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h"
 
 using namespace std;
 using namespace edm;
@@ -70,7 +73,9 @@ class FillEpsilonPlotForZ : public edm::EDAnalyzer {
       TH1F** initializeEpsilonHistograms(const char *name, const char *title, int size, int isweight );  
       void deleteEpsilonPlot(TH1F **h, int size); 
       void writeEpsilonPlot(TH1F **h, int size);        
-
+      void SetPuWeights(std::string puWeightFile);
+      float GetPUWeight(float pun);
+      
       // ----------member data ---------------------------
       bool requireOppositeCharge_;
       double minInvMassCut_, maxInvMassCut_;
@@ -103,14 +108,16 @@ class FillEpsilonPlotForZ : public edm::EDAnalyzer {
       edm::EDGetTokenT<SuperClusterCollection> EBSuperClusterCollectionToken_;
       edm::EDGetTokenT<SuperClusterCollection> EESuperClusterCollectionToken_;
       edm::EDGetTokenT<GsfElectronCollection> ElectronCollectionToken_;
+      edm::EDGetTokenT<VertexCollection> vertexToken_;
       std::string mcProducer_;
+      EDGetTokenT<edm::View<PileupSummaryInfo> > PileUpToken_;
 
       edm::Handle< EBRecHitCollection > hits;
       edm::Handle< EERecHitCollection > ehits;
       edm::Handle< SuperClusterCollection > ebScCollection;
       edm::Handle< SuperClusterCollection > eeScCollection;
       edm::Handle< GsfElectronCollection > electronCollection;
-
+      edm::Handle< VertexCollection > primaryVertices;
 
       // ---------- outputs ---------------------------
       TFile *outfile_;
@@ -133,9 +140,18 @@ class FillEpsilonPlotForZ : public edm::EDAnalyzer {
       int   isEEEE;
       int   isHR9HR9;
       float mass4tree;
-
-
+      
+      float ptele1;
+      float ptele2;
+      float etaele1;
+      float etaele2;
+      int nvtx;
+      
+      // MC weights
       float thisEventW;
+      float  pu_weight;
+      std::vector<Double_t> puweights_;
+      string puWFileName_;
 
       // Json file
       JSON* myjson;

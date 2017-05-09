@@ -20,6 +20,8 @@
 #define MIN_RESCALE -0.5
 #define MAX_RESCALE 0.5
 
+#define MAX_PU_REWEIGHT 60
+
 //#define DEBUG
 
 FillEpsilonPlotForZ::FillEpsilonPlotForZ(const edm::ParameterSet& iConfig)
@@ -38,6 +40,8 @@ FillEpsilonPlotForZ::FillEpsilonPlotForZ(const edm::ParameterSet& iConfig)
   ElectronCollectionToken_  = consumes<GsfElectronCollection>(iConfig.getUntrackedParameter<edm::InputTag>("ElectronCollectionTag"));
 
   mcProducer_ = iConfig.getUntrackedParameter<std::string>("mcProducer");
+  vertexToken_ = consumes<VertexCollection>(iConfig.getUntrackedParameter<edm::InputTag>("VertexTag"));
+  PileUpToken_ = consumes<View<PileupSummaryInfo> >(iConfig.getUntrackedParameter<InputTag> ("PileUpTag"));
 
   /// parameters from python: selection
   requireOppositeCharge_ = iConfig.getUntrackedParameter<bool>("requireOppositeCharge",false);
@@ -60,7 +64,7 @@ FillEpsilonPlotForZ::FillEpsilonPlotForZ(const edm::ParameterSet& iConfig)
   SystOrNot_               = iConfig.getUntrackedParameter<double>("SystOrNot",0);
   jsonFile_                = iConfig.getUntrackedParameter<std::string>("JSONfile","");
   useMassInsteadOfEpsilon_ = iConfig.getUntrackedParameter<bool>("useMassInsteadOfEpsilon",false);
-  
+  puWFileName_             = iConfig.getUntrackedParameter<std::string>("puWFileName");
 
   /// Json file
   if( jsonFile_!="" ) myjson=new JSON( edm::FileInPath( jsonFile_.c_str() ).fullPath().c_str() );
@@ -103,8 +107,14 @@ FillEpsilonPlotForZ::FillEpsilonPlotForZ(const edm::ParameterSet& iConfig)
   myTree->Branch("isEBEB",&isEBEB,"isEBEB/I");
   myTree->Branch("isEEEE",&isEEEE,"isEEEE/I");
   myTree->Branch("isHR9HR9",&isHR9HR9,"isHR9HR9/I");
+  myTree->Branch("nvtx",&nvtx,"nvtx/I");
   myTree->Branch("zMass",&mass4tree,"mass/F");
   myTree->Branch("mcweight",&thisEventW,"mcweight/F");
+  myTree->Branch("puweight",&pu_weight,"puweight/F");
+  myTree->Branch("ptele1",&ptele1,"ptele1/F");
+  myTree->Branch("ptele2",&ptele2,"ptele2/F");
+  myTree->Branch("etaele1",&etaele1,"etaele1/F");
+  myTree->Branch("etaele2",&etaele2,"etaele2/F");
 
 #ifdef DEBUG      
   cout << "DEBUG: Constructor done" << endl;
@@ -146,8 +156,24 @@ void FillEpsilonPlotForZ::analyze(const edm::Event& iEvent, const edm::EventSetu
   cout << "DEBUG: Analyze" << endl;
 #endif
 
-  // Getting the event weight for MC events
-  thisEventW = 1.;
+  
+  // PU weight (for MC only)
+  pu_weight = 1.; 
+  float pu_n = -1.;
+  if (isMC_) {  
+    Handle<View< PileupSummaryInfo> > PileupInfos;
+    iEvent.getByToken(PileUpToken_,PileupInfos);
+    pu_n = 0.;
+    for( unsigned int PVI = 0; PVI < PileupInfos->size(); ++PVI ) {
+      Int_t pu_bunchcrossing = PileupInfos->ptrAt( PVI )->getBunchCrossing();
+      if( pu_bunchcrossing == 0 ) 
+	pu_n = PileupInfos->ptrAt( PVI )->getTrueNumInteractions();         
+    }
+    pu_weight = GetPUWeight(pu_n);         
+  }
+
+  // dataset weight (for Mc only)
+  float perEveW = 1.;
   if (isMC_ && !mcProducer_.empty()) {
     Handle<GenEventInfoProduct> genInfo;
     try {
@@ -156,8 +182,11 @@ void FillEpsilonPlotForZ::analyze(const edm::Event& iEvent, const edm::EventSetu
       std::cerr << "Error! can't get the product genInfo" << std::endl;
     }
     const auto & eveWeights = genInfo->weights();
-    if(!eveWeights.empty()) thisEventW = eveWeights[0];
+    if(!eveWeights.empty()) perEveW = eveWeights[0];
   }
+
+  // Total MC weight
+  thisEventW = pu_weight*perEveW;
 
   // All events
   EventFlow->Fill(0.,thisEventW); 
@@ -173,6 +202,10 @@ void FillEpsilonPlotForZ::analyze(const edm::Event& iEvent, const edm::EventSetu
 
   // ----------------------------------------------------------
   // Loading collections
+
+  // vertices
+  iEvent.getByToken( vertexToken_, primaryVertices );
+  nvtx = primaryVertices->size();
 
   // ECAL Rechits
   iEvent.getByToken ( EBRecHitCollectionToken_, hits);
@@ -423,6 +456,11 @@ void FillEpsilonPlotForZ::analyze(const edm::Event& iEvent, const edm::EventSetu
   isHR9HR9=0;
   if (r91>0.94 && r92>0.94) isHR9HR9 = 1;
 
+  ptele1 = zeeCandidates[myBestZ].first->getParentSuperCluster()->energy()*sin(zeeCandidates[myBestZ].first->getRecoElectron()->theta());
+  ptele2 = zeeCandidates[myBestZ].second->getParentSuperCluster()->energy()*sin(zeeCandidates[myBestZ].second->getRecoElectron()->theta());
+  etaele1 = eta1;
+  etaele2 = eta2;
+
   myTree->Fill();
 }
 
@@ -478,6 +516,9 @@ void FillEpsilonPlotForZ::beginJob()
   cout << "DEBUG: ";
   cout << "[DEBUG] beginJob" << endl;
 #endif
+
+  // loading pileup weights
+  if (isMC_) SetPuWeights(puWFileName_);    
 }
 
 void FillEpsilonPlotForZ::endJob(){
@@ -496,6 +537,50 @@ void FillEpsilonPlotForZ::endJob(){
 
   if( Barrel_orEndcap_=="ONLY_ENDCAP" || Barrel_orEndcap_=="ALL_PLEASE" ) 
     writeEpsilonPlot(weightedRescaleFactorEE,nRegionsEE_);
+}
+
+void FillEpsilonPlotForZ::SetPuWeights(std::string puWeightFile) {
+
+  if (puWeightFile == "") {
+    std::cout << "you need a weights file to use this function" << std::endl;
+    return;
+  }
+  std::cout << "PU REWEIGHTING:: Using file " << puWeightFile << std::endl;
+
+  TFile *f_pu  = new TFile(puWeightFile.c_str(),"READ");
+  f_pu->cd();
+  
+  TH1D *puweights = 0;
+  TH1D *gen_pu = 0;
+  gen_pu    = (TH1D*) f_pu->Get("generated_pu");
+  puweights = (TH1D*) f_pu->Get("weights");
+  
+  if (!puweights || !gen_pu) {
+    std::cout << "weights histograms  not found in file " << puWeightFile << std::endl;
+    return;
+  }
+  TH1D* weightedPU= (TH1D*)gen_pu->Clone("weightedPU");
+  weightedPU->Multiply(puweights);
+  
+  // Rescaling weights in order to preserve same integral of events                               
+  TH1D* weights = (TH1D*)puweights->Clone("rescaledWeights");
+  weights->Scale( gen_pu->Integral(1,MAX_PU_REWEIGHT) / weightedPU->Integral(1,MAX_PU_REWEIGHT) );
+  
+  float sumPuWeights=0.;
+  for (int i = 0; i<MAX_PU_REWEIGHT; i++) {
+    float weight=1.;
+    weight=weights->GetBinContent(i+1);
+    sumPuWeights+=weight;
+    puweights_.push_back(weight);
+  }
+}
+
+float FillEpsilonPlotForZ::GetPUWeight(float pun) {
+  
+  float weight=1;
+  if (isMC_ && pun<MAX_PU_REWEIGHT && puweights_.size()>0) 
+    weight = puweights_[pun];
+  return weight;
 }
 
 // histo booking
