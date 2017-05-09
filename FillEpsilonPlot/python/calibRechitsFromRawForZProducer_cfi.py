@@ -9,8 +9,8 @@ ecalRecalRecHit = cms.EDProducer('CalibRechitsForZProducer',
     Barrel_orEndcap = cms.untracked.string('Barrel_or_Endcap'),
 
     # input rechit collections
-    EBRecHitCollectionTag = cms.untracked.InputTag("ecalRecHit","EcalRecHitsEB"),
-    EERecHitCollectionTag = cms.untracked.InputTag("ecalRecHit","EcalRecHitsEE"),
+    EBRecHitCollectionTag = cms.InputTag("ecalRecHit","EcalRecHitsEB"),
+    EERecHitCollectionTag = cms.InputTag("ecalRecHit","EcalRecHitsEE"),
  
     # output rechit collections
     EBNewRecHitCollection = cms.string('EcalRecalRecHitsEB'),
