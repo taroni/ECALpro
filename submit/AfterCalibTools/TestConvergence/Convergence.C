@@ -127,6 +127,12 @@ void Convergence::run() {
   TCanvas* myc1 = new TCanvas("myc1", "CMS", 600, 600);
   TString outname = "plot_" + Paths_[0] + "/Differences.root";
   TFile* output = new TFile(outname.Data(),"RECREATE");
+
+  // chiara: per fare N-0
+  //TH2F* rms_EB  = new TH2F("rms_EB","(IC(n)-IC(0))/IC(n) #phi on x #eta on y",MAX_IPHI, MIN_IPHI, MAX_IPHI, 2*MAX_IETA+1, -MAX_IETA-0.5, MAX_IETA+0.5 );
+  //TH2F* rms_EEp = new TH2F("rms_EEp","(IC(n)-IC(0))/IC(n) iX on x iY on y (EEp)",100,0.5,100.5,100,0.5,100.5);
+  //TH2F* rms_EEm = new TH2F("rms_EEm","(IC(n)-IC(0))/IC(n) iY on x iY on y (EEm)",100,0.5,100.5,100,0.5,100.5);
+  // chiara: per fare N-(N-1)
   TH2F* rms_EB  = new TH2F("rms_EB","IC(n)-IC(n-1) #phi on x #eta on y",MAX_IPHI, MIN_IPHI, MAX_IPHI, 2*MAX_IETA+1, -MAX_IETA-0.5, MAX_IETA+0.5 );
   TH2F* rms_EEp = new TH2F("rms_EEp","IC(n)-IC(n-1) iX on x iY on y (EEp)",100,0.5,100.5,100,0.5,100.5);
   TH2F* rms_EEm = new TH2F("rms_EEm","IC(n)-IC(n-1) iY on x iY on y (EEm)",100,0.5,100.5,100,0.5,100.5);
@@ -192,16 +198,19 @@ void Convergence::run() {
 
       string PathL = "root://eoscms//eos/cms" + Path_0_ + Paths_[iChunk];
       
-      for(int i=0; i<(int)nIters_[iChunk]-1; ++i){
+      for(int i=0; i<(int)nIters_[iChunk]-1; ++i){ 
+      //for(int i=(int)nIters_[iChunk]-2; i<(int)nIters_[iChunk]-1; ++i){   // chiara, per fare N-0     
 
         //Iter
         stringstream ss; ss<<i;
         stringstream ss1; ss1<<(i+nJumps_[iChunk]);
         stringstream ssTot; ssTot<<(i+iterOffset);
         stringstream ssTot1; ssTot1<<(i+iterOffset+nJumps_[iChunk]);
-        string Iter = ss.str();
+        string Iter = ss.str();        // chiara, per fare N-(N-1)
+        //string Iter = "0";           // chiara, per fare N-0      
         string Iter1 = ss1.str();
-        string IterTot = ssTot.str();
+        string IterTot = ssTot.str();  // chiara, per fare N-(N-1)    
+	//string IterTot = "0";        // chiara, per fare N-0  
         string IterTot1 = ssTot1.str();
         // Input
         TFile *fout=0;
@@ -300,19 +309,19 @@ void Convergence::run() {
             }
             
           }
-          
-          if(i==nIters_[iChunk]-1){
-            if(isEB==0 && coeff1!=1. && coeff!=1. && coeff1!=coeff && coeff!=0 /*&& Ndof>10 && Ndof1>10*/){ 
-              rms_EB->SetBinContent(iphi, ieta+86., fabs(coeff1-coeff)/coeff1);
-            }
-            if(isEB==1){
-              if(iz==1){    
-                rms_EEp->SetBinContent(ix, iy, fabs(coeff1-coeff)/coeff1);
-              }
-              else if(iz==-1)rms_EEm->SetBinContent(ix, iy, fabs(coeff1-coeff)/coeff1);
-              else cout<<"WARNING!!! zside_ not -1 or 1"<<endl;
-            }
-          }
+
+	  // // if(i==nIters_[iChunk]-1){  // chiara: per fare N-0
+	  if(isEB==0 && coeff1!=1. && coeff!=1. && coeff1!=coeff && coeff!=0 /*&& Ndof>10 && Ndof1>10*/){ 
+	    rms_EB->SetBinContent(iphi, ieta+86., fabs(coeff1-coeff)/coeff1);
+	  }
+	  if(isEB==1){
+	    if(iz==1){    
+	      rms_EEp->SetBinContent(ix, iy, fabs(coeff1-coeff)/coeff1);
+	    }
+	    else if(iz==-1)rms_EEm->SetBinContent(ix, iy, fabs(coeff1-coeff)/coeff1);
+	    else cout<<"WARNING!!! zside_ not -1 or 1"<<endl;
+	  }
+	  //}   // chiara: per fare N-0    
           
         }
         gStyle->SetOptStat(111111);
