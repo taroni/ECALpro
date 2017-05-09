@@ -27,8 +27,8 @@ CalibRechitsForZProducer::CalibRechitsForZProducer(const edm::ParameterSet& iCon
   Barrel_orEndcap_  = iConfig.getUntrackedParameter<std::string>("Barrel_orEndcap");
 
   /// Input collections
-  EBRecHitCollectionToken_  = consumes<EBRecHitCollection>(iConfig.getUntrackedParameter<edm::InputTag>("EBRecHitCollectionTag"));
-  EERecHitCollectionToken_  = consumes<EERecHitCollection>(iConfig.getUntrackedParameter<edm::InputTag>("EERecHitCollectionTag"));
+  EBRecHitCollectionToken_  = consumes<EBRecHitCollection>(iConfig.getParameter<edm::InputTag>("EBRecHitCollectionTag"));
+  EERecHitCollectionToken_  = consumes<EERecHitCollection>(iConfig.getParameter<edm::InputTag>("EERecHitCollectionTag"));
 
   /// Output collections
   EBNewRecHitCollection_ = iConfig.getParameter<std::string>("EBNewRecHitCollection");
