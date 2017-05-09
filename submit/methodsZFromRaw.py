@@ -20,6 +20,10 @@ def printFillFromRawCfgZ1( outputfile, iteration ):
     outputfile.write("process.GlobalTag.globaltag = '" + globaltag + "'\n")          
     outputfile.write('\n')  
 
+    outputfile.write('### Z skim configuration to be applied on MC\n')
+    outputfile.write('process.load("DPGAnalysis.Skims.ZElectronSkim_cff")\n')
+    outputfile.write('\n')
+
     outputfile.write('### From RAW to RECO\n')
     outputfile.write('process.load("Configuration.StandardSequences.RawToDigi_Data_cff")\n') 
     outputfile.write('process.load("RecoLocalCalo.Configuration.ecalLocalRecoSequence_cff")\n') 
@@ -27,6 +31,10 @@ def printFillFromRawCfgZ1( outputfile, iteration ):
 
     outputfile.write('### Recalibration Module using previously produced map\n')
     outputfile.write('process.load("CalibCode.FillEpsilonPlot.calibRechitsFromRawForZProducer_cfi")\n')
+    if isMC:                                        
+        outputfile.write('process.ecalRecalRecHit.EBRecHitCollectionTag = cms.InputTag("reducedEcalRecHitsEB")\n')               
+    if isMC:                                        
+        outputfile.write('process.ecalRecalRecHit.EERecHitCollectionTag = cms.InputTag("reducedEcalRecHitsEE")\n')               
     outputfile.write("process.ecalRecalRecHit.CurrentIteration = cms.untracked.int32(" + str(iteration) + ")\n")
     if (isCRAB):
         outputfile.write("process.ecalRecalRecHit.calibMapPath = cms.untracked.string('CalibCode/FillEpsilonPlot/data/" + NameTag + calibMapName + "')\n")
@@ -45,11 +53,18 @@ def printFillFromRawCfgZ1( outputfile, iteration ):
     outputfile.write('process.particleFlowRecHitECAL.producers[0].src = cms.InputTag("ecalRecalRecHit","EcalRecalRecHitsEB")\n')
     outputfile.write('process.particleFlowRecHitECAL.producers[1].src = cms.InputTag("ecalRecalRecHit","EcalRecalRecHitsEE")\n')
     outputfile.write('process.load("RecoParticleFlow.PFClusterProducer.particleFlowRecHitPS_cfi")\n') 
+    if isMC:                                        
+        outputfile.write('process.particleFlowRecHitPS.producers[0].src = cms.InputTag("reducedEcalRecHitsES")\n')           
     outputfile.write('\n')
 
     outputfile.write('### PF clusters\n') 
     outputfile.write('process.load("RecoParticleFlow.PFClusterProducer.particleFlowClusterECALUncorrected_cfi")\n')   
     outputfile.write('process.load("RecoParticleFlow.PFClusterProducer.particleFlowClusterECAL_cfi")\n')   
+    if isMC:   
+        outputfile.write('process.particleFlowClusterECAL.energyCorrector.recHitsEBLabel = cms.InputTag("reducedEcalRecHitsEB")\n')
+    if isMC:   
+        outputfile.write('process.particleFlowClusterECAL.energyCorrector.recHitsEELabel = cms.InputTag("reducedEcalRecHitsEE")\n')  
+
     outputfile.write('process.load("RecoParticleFlow.PFClusterProducer.particleFlowClusterPS_cfi")\n')    
     outputfile.write('process.load("RecoEcal.EgammaClusterProducers.particleFlowSuperClusterECAL_cfi")\n')   
     outputfile.write('\n') 
@@ -61,6 +76,10 @@ def printFillFromRawCfgZ1( outputfile, iteration ):
     outputfile.write('process.particleFlowSuperClusterECAL.PFSuperClusterCollectionEndcap = cms.string("recalibParticleFlowSuperClusterECALEndcap")\n')    
     outputfile.write('process.particleFlowSuperClusterECAL.PFBasicClusterCollectionPreshower = cms.string("recalibParticleFlowBasicClusterECALPreshower")\n')    
     outputfile.write('process.particleFlowSuperClusterECAL.PFSuperClusterCollectionEndcapWithPreshower = cms.string("recalibParticleFlowSuperClusterECALEndcapWithPreshower")\n')
+    if isMC:  
+        outputfile.write('process.particleFlowSuperClusterECAL.regressionConfig.ecalRecHitsEB = cms.InputTag("reducedEcalRecHitsEB")\n') 
+    if isMC:  
+        outputfile.write('process.particleFlowSuperClusterECAL.regressionConfig.ecalRecHitsEE = cms.InputTag("reducedEcalRecHitsEE")\n') 
     outputfile.write('\n') 
 
     outputfile.write("process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(" + nEventsPerJob +") )\n")  
@@ -97,7 +116,8 @@ def printFillFromRawCfgZ2( outputfile, pwd , iteration, outputDir, ijob ):
     outputfile.write("process.analyzerFillEpsilonForZ.maxDReleSc = cms.untracked.double( " + maxDReleSc + ")\n") 
     outputfile.write("process.analyzerFillEpsilonForZ.ZCalib_InvMass = cms.untracked.string('" + ZCalib_InvMass + "')\n")  
     outputfile.write("process.analyzerFillEpsilonForZ.electronSelection = cms.untracked.int32(" + electronSelection + ")\n") 
-    outputfile.write("process.analyzerFillEpsilonForZ.Barrel_orEndcap = cms.untracked.string('" + Barrel_or_Endcap + "')\n")        
+    outputfile.write("process.analyzerFillEpsilonForZ.Barrel_orEndcap = cms.untracked.string('" + Barrel_or_Endcap + "')\n") 
+    outputfile.write("process.analyzerFillEpsilonForZ.puWFileName = cms.untracked.string('/afs/cern.ch/user/c/crovelli/public/json2016/rereco/" + puweightfile + ".root')\n")
     outputfile.write("process.analyzerFillEpsilonForZ.useMassInsteadOfEpsilon = cms.untracked.bool( " + useMassInsteadOfEpsilon + ")\n")
 
     if(len(json_file)>0):              
@@ -111,22 +131,32 @@ def printFillFromRawCfgZ2( outputfile, pwd , iteration, outputDir, ijob ):
     outputfile.write("process.analyzerFillEpsilonForZ.EERecHitCollectionTag = cms.untracked.InputTag('ecalRecalRecHit','EcalRecalRecHitsEE')\n")
     outputfile.write("process.analyzerFillEpsilonForZ.EBSuperClusterCollectionTag = cms.untracked.InputTag('particleFlowSuperClusterECAL','recalibParticleFlowSuperClusterECALBarrel','analyzerFillEpsilonForZ')\n")    
     outputfile.write("process.analyzerFillEpsilonForZ.EESuperClusterCollectionTag = cms.untracked.InputTag('particleFlowSuperClusterECAL','recalibParticleFlowSuperClusterECALEndcapWithPreshower','analyzerFillEpsilonForZ')\n")    
-    outputfile.write("process.analyzerFillEpsilonForZ.ElectronCollectionTag = cms.untracked.InputTag('gedGsfElectrons','','RECO')\n") 
-    if isMC:   
-        outputfile.write("process.analyzerFillEpsilonForZ.mcProducer = cms.untracked.string('genParticles')\n")
-    else:
-        outputfile.write("process.analyzerFillEpsilonForZ.mcProducer = cms.untracked.string('')\n")
+    outputfile.write("process.analyzerFillEpsilonForZ.ElectronCollectionTag = cms.untracked.InputTag('gedGsfElectrons','','RECO')\n")    
+    outputfile.write("process.analyzerFillEpsilonForZ.VertexTag = cms.untracked.InputTag('offlinePrimaryVertices')\n")
+    outputfile.write("process.analyzerFillEpsilonForZ.PileUpTag = cms.untracked.InputTag('addPileupInfo')\n")
+
+    outputfile.write("process.analyzerFillEpsilonForZ.mcProducer = cms.untracked.string('')\n")
     outputfile.write("\n")
     outputfile.write("process.p = cms.Path()\n")
     outputfile.write("process.p *= process.bunchSpacingProducer\n")   
-    outputfile.write("process.p *= process.ecalDigis\n")   
-    outputfile.write("process.p *= process.ecalPreshowerDigis\n")   
-    outputfile.write("process.p *= process.ecalMultiFitUncalibRecHit\n")
-    outputfile.write("process.p *= process.ecalDetIdToBeRecovered\n")
-    outputfile.write("process.p *= process.ecalRecHit\n")
-    outputfile.write("process.p *= process.ecalCompactTrigPrim\n")
-    outputfile.write("process.p *= process.ecalTPSkim\n")
-    outputfile.write("process.p *= process.ecalPreshowerRecHit\n")
+    if isMC:
+        outputfile.write("process.p *= process.zdiElectronSequence\n")
+    if not(isMC):  
+        outputfile.write("process.p *= process.ecalDigis\n")   
+    if not(isMC):  
+        outputfile.write("process.p *= process.ecalPreshowerDigis\n")   
+    if not(isMC):          
+        outputfile.write("process.p *= process.ecalMultiFitUncalibRecHit\n")
+    if not(isMC):  
+        outputfile.write("process.p *= process.ecalDetIdToBeRecovered\n")
+    if not(isMC):  
+        outputfile.write("process.p *= process.ecalRecHit\n")
+    if not(isMC):  
+        outputfile.write("process.p *= process.ecalCompactTrigPrim\n")
+    if not(isMC):  
+        outputfile.write("process.p *= process.ecalTPSkim\n")
+    if not(isMC):  
+        outputfile.write("process.p *= process.ecalPreshowerRecHit\n")
     outputfile.write("process.p *= process.ecalRecalRecHit\n")    
     outputfile.write("process.p *= process.particleFlowRecHitPS\n")
     outputfile.write("process.p *= process.particleFlowClusterPS\n")

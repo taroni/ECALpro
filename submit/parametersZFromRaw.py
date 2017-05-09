@@ -1,10 +1,9 @@
 #Do not modify these
 nEventsPerJob      = '-1'
-outputFile         = 'ZNtpRawMisc'           # without .root suffix
+outputFile         = 'ZNtpDataFull2'           # without .root suffix
 calibMapName       = 'calibMap.root'
 
 #PATH
-#eosPath = '/store/user/crovelli'
 eosPath = '/store/group/dpg_ecal/alca_ecalcalib/zeeIc'
 #
 #adding following variables to use commands like "eos ls" and "eos ls -l" commands instead of cmsLs.
@@ -39,21 +38,21 @@ if(isCRAB):
        outLFN      = "/store/user/mciprian/piZero2016/"
 
 #InputList and Folder name
-inputlist_n      = 'InputList/fileZskim_BtoF_purified_271036-280385_NoL1T.list'
-dirname          = 'ZfromRawBtoFMisc'
+inputlist_n      = 'InputList/fileZskim_BtoH_rereco_purifiedWithFinalJson.list'
+dirname          = 'ZDataFull2'
 Silent           = False                 # True->Fill modules is silent; False->Fill modules has a standard output
 
 #TAG, QUEUE and ITERS
-NameTag          = 'ZrawMisc_'          # Tag to the names to avoid overlap
+NameTag          = 'ZDataFull2_'          # Tag to the names to avoid overlap
 queueForDaemon   = 'cmscaf1nw'          # Option suggested: 2nw/2nd, 1nw/1nd, cmscaf1nw/cmscaf1nd... even cmscaf2nw
 queue            = 'cmscaf1nd'
-nIterations      = 8
-SubmitFurtherIterationsFromExisting = True
+nIterations      = 14
+SubmitFurtherIterationsFromExisting = False
 startingCalibMap = '' # used  only if SubmitFurtherIterationsFromExisting is True
 if (SubmitFurtherIterationsFromExisting):  # choose path of the calibMap you want to start from
    startingCalibMap = "/store/user/crovelli/TestZ_miscal/miscalibMaps.root"
 #N files
-ijobmax          = 5                     # 5 number of files per job
+ijobmax          = 2                     # 5 number of files per job
 nHadd            = 35                    # 35 number of files per hadd
 fastHadd         = True                  # From 7_4_X we can use this faster mathod. But files have to be copied on /tmp/ to be converted in .db
 if( isCRAB and isOtherT2 ):
@@ -69,10 +68,12 @@ elePtCut = '20'
 eleEtaCut = '2.5'
 maxDReleSc = '0.15'
 ZCalib_InvMass = 'SCTRMass'
+puweightfile = 'pileupWeights__GoldenFinal__63mb'
 electronSelection = '-1'
 useMassInsteadOfEpsilon = 'True'
 
 # data / json / GT
 isMC               = False
-json_file          = 'Cert_271036-280385_13TeV_PromptReco_Collisions16_JSON_NoL1T.txt' if isMC==False else ''            #/afs/cern.ch/cms/CAF/CMSALCA/ALCA_ECALCALIB/json_ecalonly/
-globaltag          = '80X_dataRun2_2016SeptRepro_v3' if isMC==False else '80X_mcRun2_asymptotic_v5' #old is GR_P_V56
+json_file          = 'Cert_271036-284044_13TeV_23Sep2016ReReco_Collisions16_JSON.txt' if isMC==False else ''            #/afs/cern.ch/cms/CAF/CMSALCA/ALCA_ECALCALIB/json_ecalonly/
+globaltag          = '80X_dataRun2_2016SeptRepro_v3' if isMC==False else '80X_mcRun2_asymptotic_2016_v3' #old is GR_P_V56
+#globaltag         = '80X_dataRun2_Prompt_v12' if isMC==False else '80X_mcRun2_asymptotic_v5' #old is GR_P_V56
