@@ -198,13 +198,6 @@ for iters in range(Iter_toResub, nIterations):
 
       print 'Done with staging the final epsilonPlots.root'
 
-      # removing useles file
-#      for nRm in range(Nlist):
-#          remove_s = 'cmsRm ' + eosPath + '/' + dirname + '/iter_' + str(iters) + '/'+ NameTag +'epsilonPlots_' + str(nRm) + '.root'
-#          print '[Removed] :: ' + remove_s
-#          removeFile = subprocess.Popen([remove_s],stdout=subprocess.PIPE, shell=True)
-#          nFilesRemoved = 0
-#          filesRemoved = (removeFile.communicate()[0]).splitlines()
 
    # N of Fit to send
    nEB = 61199/nFit
@@ -218,14 +211,12 @@ for iters in range(Iter_toResub, nIterations):
    # preparing submission of fit tasks (EB)
    print 'Submitting ' + str(nEB) + ' jobs to fit the Barrel'
    for inteb in range(nEB):
-       #fit_log_n = logPath + "/fitEpsilonPlot_EB_" + str(inteb) + "_iter_" + str(iters) + ".log"
        fit_src_n = srcPath + "/Fit/submit_EB_" + str(inteb) + "_iter_"     + str(iters) + ".sh"
-       #submit_s = "bsub -q " + queue + " -o " + fit_log_n + " source " + fit_src_n
        submit_s = "bsub -q " + queue + " -o /dev/null -e /dev/null " + fit_src_n
-       ListFinaHadd.append('root://eoscms//eos/cms' + eosPath + '/' + dirname + '/iter_' + str(iters) + '/' + NameTag + 'Barrel_'+str(inteb)+'_' + calibMapName )
+       ListFinaHadd.append(eosPath + '/' + dirname + '/iter_' + str(iters) + '/' + NameTag + 'Barrel_'+str(inteb)+'_' + calibMapName )
        if(onlyFinalHadd=='False'):
          print 'About to EB fit:'
-         print 'root://eoscms//eos/cms' + eosPath + '/' + dirname + '/iter_' + str(iters) + '/' + NameTag + 'Barrel_'+str(inteb)+'_' + calibMapName
+         print eosPath + '/' + dirname + '/iter_' + str(iters) + '/' + NameTag + 'Barrel_'+str(inteb)+'_' + calibMapName
          print submit_s
          # actually submitting fit tasks (EB)
          submitJobs = subprocess.Popen([submit_s], stdout=subprocess.PIPE, shell=True);
@@ -235,14 +226,13 @@ for iters in range(Iter_toResub, nIterations):
    # preparing submission of fit tasks (EE)
    print 'Submitting ' + str(nEE) + ' jobs to fit the Endcap'
    for inte in range(nEE):
-       #fit_log_n = logPath + "/fitEpsilonPlot_EE_" + str(inte) + "_iter_" + str(iters) + ".log"
        fit_src_n = srcPath + "/Fit/submit_EE_" + str(inte) + "_iter_"     + str(iters) + ".sh"
        # redirecting output on /dev/null is required to avoid LSF directory to be created automatically
        submit_s = "bsub -q " + queue + " -o /dev/null -e /dev/null " + fit_src_n
-       ListFinaHadd.append('root://eoscms//eos/cms' + eosPath + '/' + dirname + '/iter_' + str(iters) + '/' + NameTag + 'Endcap_'+str(inte) + '_' + calibMapName)
+       ListFinaHadd.append(eosPath + '/' + dirname + '/iter_' + str(iters) + '/' + NameTag + 'Endcap_'+str(inte) + '_' + calibMapName)
        if(onlyFinalHadd=='False'):
          print 'About to EE fit:'
-         print 'root://eoscms//eos/cms' + eosPath + '/' + dirname + '/iter_' + str(iters) + '/' + NameTag + 'Endcap_'+str(inte) + '_' + calibMapName
+         print eosPath + '/' + dirname + '/iter_' + str(iters) + '/' + NameTag + 'Endcap_'+str(inte) + '_' + calibMapName
          print submit_s
          # actually submitting fit tasks (EE)
          submitJobs = subprocess.Popen([submit_s], stdout=subprocess.PIPE, shell=True);
@@ -587,9 +577,10 @@ for iters in range(Iter_toResub, nIterations):
    f.Close()
 
    print 'Now staging calibMap.root on EOS'
-   stage_s_fin = 'cmsStage /tmp/' + NameTag + calibMapName + ' ' + eosPath + '/' + dirname + '/iter_' + str(iters) + "/" + NameTag + calibMapName
+   stage_s_fin = 'cp /tmp/' + NameTag + calibMapName + ' ' + eosPath + '/' + dirname + '/iter_' + str(iters) + "/" + Add_path + "/" + NameTag + calibMapName
    print stage_s_fin
    stageCalibFile = subprocess.Popen([stage_s_fin], stdout=subprocess.PIPE, shell=True);
+
    print stageCalibFile.communicate()
    print 'Done with staging the final calibMap.root'
 
