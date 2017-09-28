@@ -5,7 +5,8 @@ outputFile         = 'ZNtpMcMoriond'                  # without .root suffix
 calibMapName       = 'calibMap.root'
 
 #PATH
-eosPath = '/eos/cms/store/group/dpg_ecal/alca_ecalcalib/zeeIc'
+#eosPath = '/eos/cms/store/group/dpg_ecal/alca_ecalcalib/zeeIc'
+eosPath = '/eos/cms/store/user/taroni/alca_ecalcalib/zeeIc'
 #
 #See also here for more details --> https://twiki.cern.ch/twiki/bin/view/CMSPublic/CERNStorageTools 
 myeoscmd = 'eos ' # from July 2017 we can use eos on lxbatch from inside scripts 
@@ -18,7 +19,7 @@ prefixSourceFile = 'root://cms-xrd-global.cern.ch/'
 #CRAB
 isCRAB           = False               # If not is batch
 CRAB_Data_Path   = '/SinglePion_FlatPt-1To15_AsymptNoPU/emanuele-SinglePion_FlatPt-1To15_AsymptNoPU-9709e5e865f17288f5a53621cf8e9935/USER'
-CRAB_CopyCert    = '/afs/cern.ch/user/l/lpernie/private/x509up_u12147'
+CRAB_CopyCert    = '/afs/cern.ch/user/t/taroni/x509up_u29820'
 storageSite      = "T2_CH_CERN"
 unitsPerJob = 10   #DBS File per Job
 isOtherT2        = False

@@ -208,6 +208,7 @@ def printSubmitSrc(outputfile, cfgName, source, destination, pwd, logpath):
     outputfile.write("#!/bin/bash\n")
     outputfile.write("cd " + pwd + "\n")
     outputfile.write("eval `scramv1 runtime -sh`\n")
+    outputfile.write("export X509_USER_PROXY=/afs/cern.ch/user/t/taroni/x509up_u29820")
     if not(Silent):
         outputfile.write("echo 'cmsRun " + cfgName + "'\n")
         outputfile.write("cmsRun " + cfgName + "\n")

@@ -233,6 +233,7 @@ env_script_n = workdir + "/submit.sh"
 env_script_f = open(env_script_n, 'w')
 env_script_f.write("#!/bin/bash\n")
 env_script_f.write("cd " + pwd + "\n")
+env_script_f.write("export X509_USER_PROXY=/afs/cern.ch/user/t/taroni/x509up_u29820")
 env_script_f.write("ulimit -c 0\n")
 env_script_f.write("eval `scramv1 runtime -sh`\n")
 env_script_f.write( "python " + pwd + "/calibJobHandlerZFromRaw.py " + str(njobs) + " " + queue + "\n")
